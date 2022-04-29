@@ -116,131 +116,62 @@ def fast_img_recover(img):
     noiseMask = np.array(img != 0, dtype='double')
     # print(noiseMask)
 
-
-    for x in range(rows//block_size+1):
-        # if x<63:
-        #     continue
-        for y in range(cols//block_size+1):
-            if (x+1)*16>rows:
-                goal_block_x=rows
-            else:
-                goal_block_x=(x+1)*16
-            if (y+1)*16>cols:
-                goal_block_y=cols
-            else:
-                goal_block_y=(y+1)*16
-            # print('goal block:{}-{},{}-{}'.format(x*16,goal_block_x, y*16,goal_block_y))
-            if x<3:
-                row_l=0
-            else:
-                row_l=16*(x-3)+6
-            if rows<(x+3)*16+10:
-                row_h=rows
-            else:
-                row_h=(x+3)*16+10
-            print(row_l, row_h)
-            if y<3:
-                col_l=0
-            else:
-                col_l=16*(y-3)+6
-            if cols<(y+3)*16+10:
-                col_h=cols
-            else:
-                col_h=(y+3)*16+10
-            print(col_l, col_h,'\n')
-            for chan in range(channel):
-                '计算回归模型'
-                x_train = []
-                y_train = []
-                for i in range(row_l, row_h):
-                    for j in range(col_l, col_h):
-                        if noiseMask[i, j, chan] == 0.:
-                            continue
-                        # if i == row and j == col:
-                        #     continue
-                        x_train.append([i, j])
-                        y_train.append([img[i, j, chan]])
-                if x_train == []: # 完全被抹除则直接放弃本区域
-                    continue
-                Regression = LinearRegression()
-                Regression.fit(x_train, y_train)
-                '根据模型填值'
-                for xx in range(x*16,goal_block_x):
-                    for yy in range(y*16,goal_block_y):
-                        if noiseMask[xx, yy, chan] != 0.:
-                            continue
-                        resImg[xx, yy, chan] = Regression.predict([[xx, yy]])
-
-    return resImg
-
-
-            #     if noiseMask[row, col, chan] != 0.:
-            #         continue
-            #     x_train = []
-            #     y_train = []
-            #     for i in range(rowl, rowr):
-            #         for j in range(coll, colr):
-            #             if noiseMask[i, j, chan] == 0.:
-            #                 continue
-            #             if i == row and j == col:
-            #                 continue
-            #             x_train.append([i, j])
-            #             y_train.append([img[i, j, chan]])
-            #     if x_train == []:
-            #         continue
-            #     Regression = LinearRegression()
-            #     Regression.fit(x_train, y_train)
-            #     resImg[row, col, chan] = Regression.predict([[row, col]])
-            # count += 1
-    
-
-'''
-with tqdm(total=rows, desc='test', leave=True, ncols=100, unit='B', unit_scale=True) as pbar:
-        for row in range(rows):
-            for col in range(cols):
-                # print(row, col)
-
-                if row - distance < 0:
-                    rowl = 0
-                    rowr = rowl + 2 * distance
-                elif row + distance>rows:
-                    rowr = rows -1
-                    rowl = rowr - 2 * distance
+    with tqdm(total=(rows//block_size+1)*(cols//block_size+1), desc='test', leave=True, ncols=100, unit='B', unit_scale=True) as pbar:
+        for x in range(rows//block_size+1):
+            # if x<63:
+            #     continue
+            for y in range(cols//block_size+1):
+                if (x+1)*16>rows:
+                    goal_block_x=rows
                 else:
-                    rowl = row - distance
-                    rowr = row + distance
-
-                if col - distance < 0:
-                    coll = 0
-                    colr = coll + 2 * distance
-                elif col + distance>cols:
-                    colr = cols -1
-                    coll = colr - 2 * distance
+                    goal_block_x=(x+1)*16
+                if (y+1)*16>cols:
+                    goal_block_y=cols
                 else:
-                    coll = col - distance
-                    colr = col + distance
-
+                    goal_block_y=(y+1)*16
+                # print('goal block:{}-{},{}-{}'.format(x*16,goal_block_x, y*16,goal_block_y))
+                if x<3:
+                    row_l=0
+                else:
+                    row_l=16*(x-3)+6
+                if rows<(x+3)*16+10:
+                    row_h=rows
+                else:
+                    row_h=(x+3)*16+10
+                # print(row_l, row_h)
+                if y<3:
+                    col_l=0
+                else:
+                    col_l=16*(y-3)+6
+                if cols<(y+3)*16+10:
+                    col_h=cols
+                else:
+                    col_h=(y+3)*16+10
+                # print(col_l, col_h,'\n')
                 for chan in range(channel):
-                    if noiseMask[row, col, chan] != 0.:
-                        continue
+                    '计算回归模型'
                     x_train = []
                     y_train = []
-                    for i in range(rowl, rowr):
-                        for j in range(coll, colr):
+                    for i in range(row_l, row_h):
+                        for j in range(col_l, col_h):
                             if noiseMask[i, j, chan] == 0.:
                                 continue
-                            if i == row and j == col:
-                                continue
+                            # if i == row and j == col:
+                            #     continue
                             x_train.append([i, j])
                             y_train.append([img[i, j, chan]])
-                    if x_train == []:
+                    if x_train == []: # 完全被抹除则直接放弃本区域
                         continue
                     Regression = LinearRegression()
                     Regression.fit(x_train, y_train)
-                    resImg[row, col, chan] = Regression.predict([[row, col]])
-                count += 1
-        pbar.update(1)'''
-    # return resImg
+                    '根据模型填值'
+                    for xx in range(x*16,goal_block_x):
+                        for yy in range(y*16,goal_block_y):
+                            if noiseMask[xx, yy, chan] != 0.:
+                                continue
+                            resImg[xx, yy, chan] = Regression.predict([[xx, yy]])
+                pbar.update(1)
+    return resImg
 
 
 if __name__ == '__main__':
@@ -249,13 +180,13 @@ if __name__ == '__main__':
     # print(img.shape)
     img = cv2.imread('test.jpg')
     mask,noise_img = make_noise(img)
-    print(noise_img.shape)
+    loss0 = cv2.norm(img, noise_img, cv2.NORM_L2)
+    print('loss0:{}'.format(loss0))
+    # print(noise_img.shape)
     # fast_img_recover(img)
-    t1=time.time()
     recover_img = fast_img_recover(noise_img)
-    print(time.time()-t1)
-    cv2.imshow('recovered',recover_img)
-    cv2.waitKey(0)
-    cv2.imwrite('recover.png',recover_img)
-    # loss = cv2.norm(img, recover_img, cv2.NORM_L2)
-    # print(loss)
+    # cv2.imshow('recovered',recover_img)
+    # cv2.waitKey(0)
+    # cv2.imwrite('recover.png',recover_img)
+    loss = cv2.norm(img, recover_img, cv2.NORM_L2)
+    print('loss:{}'.format(loss))
